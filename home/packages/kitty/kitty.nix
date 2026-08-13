@@ -1,24 +1,20 @@
-# kitty — native home-manager module.
+# kitty — the real config kept verbatim (it mixes settings, keymaps and an
+# include, so a raw kitty.conf is simpler than the typed `settings` map).
 #
-# kitty has no scripting (pure key=value), so the typed `settings` map is
-# lossless and preferable to a raw kitty.conf. STARTER values below; fill in
-# your real theme/font.
-{ config, pkgs, ... }:
+# The two kittens referenced by kitty.conf (`+kitten search.py`) are placed
+# alongside the config in ~/.config/kitty/. The Linux-only quickshell theme
+# `include` is appended by home/linux.nix (kitty.conf has none on purpose).
+#
+# Font: JetBrains Mono Nerd Font — installed via home.packages in common.nix.
+{ ... }:
 
 {
   programs.kitty = {
     enable = true;
-
-    settings = {
-      scrollback_lines = 10000;
-      enable_audio_bell = false;
-      confirm_os_window_close = 0;
-      # font_family = "Hack Nerd Font";
-      # font_size = 13;
-    };
-
-    # If you'd rather keep an existing kitty.conf verbatim, drop it next to this
-    # file and use instead:
-    #   extraConfig = builtins.readFile ./kitty.conf;
+    extraConfig = builtins.readFile ./kitty.conf;
   };
+
+  # Kittens must sit in the kitty config dir so `+kitten search.py` resolves.
+  xdg.configFile."kitty/search.py".source = ./search.py;
+  xdg.configFile."kitty/scroll_mark.py".source = ./scroll_mark.py;
 }

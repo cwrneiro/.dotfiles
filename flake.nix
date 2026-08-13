@@ -16,9 +16,22 @@
       url = "github:nix-community/neovim-nightly-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # nixCats manages the Neovim config declaratively: plugins/LSPs/treesitter
+    # parsers come from Nix while the lua/ tree stays real Lua. Wired via its
+    # home-manager module in home/packages/neovim/neovim.nix.
+    nixCats.url = "github:BirdeeHub/nixCats-nvim";
+
+    # Plugins absent from nixpkgs are pulled in as raw sources named
+    # `plugins-<name>`; utils.standardPluginOverlay exposes them as
+    # pkgs.neovimPlugins.<name>. monokai-nightasty is the only one we need.
+    plugins-monokai-nightasty = {
+      url = "github:polirritmico/monokai-nightasty.nvim";
+      flake = false;
+    };
   };
 
-  outputs = { self, nixpkgs, home-manager, neovim-nightly-overlay, ... }@inputs:
+  outputs = { self, nixpkgs, home-manager, neovim-nightly-overlay, nixCats, ... }@inputs:
     let
       # A single helper builds a home-manager configuration for ANY OS/arch.
       # This is the key generalization over the reference dotfiles repo, which
@@ -46,16 +59,16 @@
         # ---- Arch Linux (home-manager standalone on a non-NixOS distro) ----
         "arch" = mkHome {
           system = "x86_64-linux";
-          username = "augusto";            # TODO: confirm real Arch username
-          homeDirectory = "/home/augusto"; # TODO: confirm
+          username = "carneiro";
+          homeDirectory = "/home/carneiro";
           hostModule = ./home/hosts/arch.nix;
         };
 
         # ---- NixOS ----
         "nixos" = mkHome {
           system = "x86_64-linux";
-          username = "augusto";            # TODO: confirm real NixOS username
-          homeDirectory = "/home/augusto"; # TODO: confirm
+          username = "carneiro";
+          homeDirectory = "/home/carneiro";
           hostModule = ./home/hosts/nixos.nix;
         };
       };

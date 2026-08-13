@@ -18,6 +18,7 @@
     ./packages/zsh/zsh.nix
     ./packages/kitty/kitty.nix
     ./packages/tmux/tmux.nix
+    ./packages/ohmyposh/ohmyposh.nix
     # ./packages/<name>/<name>.nix   <- add new programs here
   ];
 
@@ -31,7 +32,10 @@
   # Let home-manager manage itself, so this works on non-NixOS (macOS, Arch).
   programs.home-manager.enable = true;
 
-  # Nerd Font support (render-markdown.nvim + icons expect one). Install the
-  # actual font per-OS or add a nerd-fonts package to home.packages.
+  # Nerd Font: JetBrains Mono (kitty's font + nvim/render-markdown icons).
+  # On Linux, fontconfig picks it up from the profile; on macOS it is also
+  # linked into ~/Library/Fonts by home/darwin.nix (Nix fonts aren't auto-
+  # registered there).
   fonts.fontconfig.enable = true;
+  home.packages = [ pkgs.nerd-fonts.jetbrains-mono ];
 }

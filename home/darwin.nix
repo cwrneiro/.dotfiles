@@ -4,7 +4,13 @@
 { pkgs, lib, ... }:
 
 {
-  imports = [ ./common.nix ];
+  imports = [
+    ./common.nix
+    # macOS-only programs (aerospace/sketchybar aren't packaged for Linux and
+    # the aerospace module asserts a Darwin platform).
+    ./packages/aerospace/aerospace.nix
+    ./packages/sketchybar/sketchybar.nix
+  ];
 
   home.packages = with pkgs; [
     clang # C compiler for nvim-treesitter parser builds (macOS uses clang)

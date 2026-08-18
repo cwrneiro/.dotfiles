@@ -113,8 +113,15 @@ across modules:
   Python, Obsidian), `envExtra` (uv), and `initContent` via `lib.mkMerge` of a
   `mkBefore` block (homebrew `fpath` + `bashcompinit`, before compinit) and a
   `mkAfter` block (bun, rancher, gcloud, work/ct/tokens work bits).
-- `home/linux.nix` — **Arch stub** (`initContent` TODO) awaiting the user's
-  Arch `~/.zshrc`.
+- `home/linux.nix` — the Arch `~/.zshrc` folded in: bindkeys, `nvhypr`, the
+  `claudio='claude'` alias, `esp()` (esp-idf, lazy), and
+  `home.sessionPath += ~/.local/bin`. (`grep='grep --color=auto'` lives in the
+  shared base, not here.)
+  **Deliberately dropped from the Arch `~/.zshrc`** (don't re-add without asking):
+  `nvbashrc`/`nvzshrc` (HM makes `~/.zshrc` a read-only symlink — edit the repo
+  instead), `texref`, `rpi-imager`, `~/.cargo/bin` on PATH, and the reflex `bun`
+  block. Also folded into the **shared** base: `ll` was removed entirely and
+  `ls` switched to `--color=auto` (pipe-safe) — this affects macOS too.
 
 Consequence: `~/.zshrc` is now a read-only symlink, so tools that self-edit it
 (Rancher Desktop, gcloud installer) can't — their lines are baked in Nix and
@@ -160,6 +167,68 @@ lazy dir:
 `~/.local/share/nvim/site/pack/*` (old packer), `~/.local/share/nvim/lazy/*`
 (old lazy clones). On this Mac they were moved to `*.pre-nixcats` — safe to rm.
 
+### 11. macOS window manager + bar: AeroSpace + SketchyBar (macOS-only)
+Both are macOS-only, so they're imported from `home/darwin.nix` (NOT `common.nix`)
+— aerospace/sketchybar aren't packaged for Linux and the aerospace HM module
+asserts a Darwin platform. Binaries come from **nixpkgs** (dropped Homebrew):
+`aerospace`, `sketchybar`, `sketchybar-app-font`.
+
+- **AeroSpace** (`home/packages/aerospace/`): config kept **verbatim** (like
+  kitty.conf, per §4). The HM `programs.aerospace` module only writes a config
+  file when `settings != {}`, so we set `enable = true` + `launchd.enable =
+  true` with **empty settings** — using the module purely for its correctly-wired
+  launchd agent (it launches `AeroSpace.app/Contents/MacOS/AeroSpace`, which is
+  what macOS grants Accessibility to; KeepAlive + wait4path). The real
+  `aerospace.toml` goes in via `xdg.configFile` — no collision since the module
+  writes nothing. Two edits to the vendored toml: `start-at-login = false`
+  (launchd owns startup now, else double login item) and the sketchybar-trigger
+  path is a `@sketchybar@` token replaced at build time with
+  `${pkgs.sketchybar}/bin/sketchybar` (absolute store path → independent of the
+  launchd/GUI PATH). Note the module's config-onChange reload is tied to its own
+  (unwritten) file, so after editing `aerospace.toml` reload manually:
+  `aerospace reload-config` (or the `alt-shift-c` binding).
+  **Accessibility caveat:** the nix `.app` gets a new store path on each version
+  bump, so macOS may drop the Accessibility grant and need re-approval after an
+  update (inherent to GUI apps from the store).
+- **SketchyBar** (`home/packages/sketchybar/`): a modified third-party fork
+  (was `Kcraft059/sketchybar-config`, Rosé Pine-ish) **deliberately disconnected
+  from upstream**, so the runtime tree is **vendored** into
+  `packages/sketchybar/config/` and symlinked to `~/.config/sketchybar` via
+  `xdg.configFile` (recursive → real dir, exec bits preserved). Only the files
+  `sketchybarrc` actually sources are vendored (~370K): the scripts +
+  `sketchy-items/` + `plugins/` + the two helper binaries **`menubar` and
+  `ft-haptic`** (aliased via `$RELPATH` by the plugins, NOT in nixpkgs). Dropped:
+  the redundant 596K `sketchybar` binary (nix provides it), `.git`, README/TODO,
+  `install.sh`, `config-examples/`. Sourced helpers (config.sh, theme.sh,
+  sketchy-items/*) need no +x; everything sketchybar *executes* (sketchybarrc,
+  plugins/**, the binaries) keeps its +x from the store. **No
+  `services.sketchybar` in home-manager** (unlike nix-darwin), so it's a plain
+  `launchd.agents.sketchybar` (KeepAlive, RunAtLoad). Its `EnvironmentVariables.
+  PATH` must be complete because the daemon hands that env to the plugin scripts
+  it spawns — sketchybarrc's own PATH edits don't reach them. `sketchybar-app-
+  font.ttf` is linked into `~/Library/Fonts` (macOS doesn't register nix fonts),
+  mirroring the JetBrains Mono link. Local knobs live in the vendored
+  `config.sh` (`COLOR_SCHEME`, `WINDOW_MANAGER="aerospace"`, theme path).
+
+**`spaces.sh` deadlock fix (important):** `aerospace list-workspaces --all`
+DEADLOCKS when invoked from inside the sketchybar daemon's config process under
+aerospace **0.21.3-Beta** (it runs fine standalone) — this hangs item sourcing and
+leaves the bar EMPTY (0 items). It only bites when aerospace is *reachable* during
+the bar's load, which is why the brew setup (aerospace 0.20.3) didn't hit it and
+why a first load with aerospace still down succeeds. Confirmed by tracing: the load
+stalls right after "Starting sourcing of Items" and never reaches "Detected
+aerospace spaces". Fix in `config/sketchy-items/spaces.sh`: wrap the call in a 3s
+timeout (`perl -e 'alarm 3; exec @ARGV' aerospace …`; macOS has no `timeout`) so a
+hang can't block sourcing — on timeout SPACES is empty and the existing loop falls
+back to workspaces 1-10 anyway (no functional loss). Affects brew AND nix sketchybar
+identically (it's the config↔aerospace interaction, not the bar binary).
+
+Migration on this Mac: the old `~/.config/{aerospace,sketchybar}` and the brew
+`sketchybar-app-font.ttf` were moved to `*.pre-nix` backups; brew's sketchybar
+LaunchAgent was unloaded. The brew `aerospace`/`sketchybar`/`font-sketchybar-app-
+font` were left installed as a fallback until the nix setup is confirmed
+(uninstall once happy — nix ones are first on PATH regardless).
+
 ## Repo layout
 
 ```
@@ -169,7 +238,7 @@ lazy dir:
 ├── README.md                       # apply commands + workflow
 ├── home/
 │   ├── common.nix                  # identity + imports aggregator
-│   ├── darwin.nix                  # macOS extras (clang) -> imports common
+│   ├── darwin.nix                  # macOS extras (clang, aerospace, sketchybar) -> imports common
 │   ├── linux.nix                   # Arch+NixOS extras (gcc, xdg-utils)
 │   ├── hosts/
 │   │   ├── macbook.nix             # -> darwin.nix
@@ -180,7 +249,9 @@ lazy dir:
 │       ├── neovim/neovim.nix       # env only (Phase 1)
 │       ├── zsh/zsh.nix
 │       ├── kitty/kitty.nix
-│       └── tmux/{tmux.nix,tmux.conf}
+│       ├── tmux/{tmux.nix,tmux.conf}
+│       ├── aerospace/{aerospace.nix,aerospace.toml}   # macOS-only (via darwin.nix)
+│       └── sketchybar/{sketchybar.nix,config/…}       # macOS-only (via darwin.nix)
 └── system/                         # (later) NixOS system layer
 ```
 
@@ -206,6 +277,15 @@ lazy dir:
       (`nix build .#homeConfigurations.arch.activationPackage`) — evaluates, untested.
 - [ ] Add a Nerd Font package (e.g. `nerd-fonts.hack`) if icons render wrong
       (`have_nerd_font = true` is already set in `neovim.nix`).
+- [x] Manage AeroSpace + SketchyBar on macOS from nixpkgs (see §11). Done —
+      binaries + configs live in the flake; launchd agents run both.
+- [ ] Grant Accessibility to the Nix `AeroSpace.app` (System Settings → Privacy
+      & Security → Accessibility) — required for tiling; re-grant after aerospace
+      version bumps (store path changes).
+- [ ] Once the nix bar/WM is confirmed good: `brew uninstall aerospace sketchybar
+      font-sketchybar-app-font` and remove the `~/.config/{aerospace,sketchybar}.
+      pre-nix` + `~/Library/Fonts/sketchybar-app-font.ttf.pre-nix` backups.
+- [ ] Commit the aerospace/sketchybar migration (currently only staged).
 
 ## How to apply (once Nix is installed)
 

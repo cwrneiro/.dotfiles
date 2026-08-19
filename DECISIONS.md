@@ -102,7 +102,7 @@ state-migration behavior and must not be bumped casually (it is NOT "the version
 of anything"). Note: recent home-manager uses `programs.zsh.initContent`
 (older: `initExtra`) — adjust if a version mismatch errors.
 
-### 7. zsh is OS-split across the module layers
+### 7b. zsh is OS-split across the module layers
 zsh config differs a lot between macOS and Arch, so it is split using the fact
 that `programs.zsh.initContent`/`shellAliases`/`profileExtra`/`envExtra` **merge**
 across modules:

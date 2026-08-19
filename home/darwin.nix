@@ -56,10 +56,12 @@
     export PATH="$PATH:/Applications/Obsidian.app/Contents/MacOS"
   '';
 
-  # Always-sourced (.zshenv): uv.
-  programs.zsh.envExtra = ''
-    export PATH="$HOME/.local/bin:$PATH"
-  '';
+  # Work aliases (moved out of initContent so they get Nix-level dedup/collision
+  # detection). claudio: macOS binds it to `claude` (Linux uses plain claude).
+  programs.zsh.shellAliases = {
+    claudio = "claude";
+    work = "claude";
+  };
 
   # Interactive (.zshrc). mkBefore runs before compinit (fpath must precede it);
   # mkAfter runs after the shared setup and the oh-my-posh init.
@@ -75,31 +77,12 @@
       export BUN_INSTALL="$HOME/Library/Application Support/reflex/bun"
       export PATH="$BUN_INSTALL/bin:$PATH"
 
-      # Rancher Desktop
-      export PATH="$HOME/.rd/bin:$PATH"
-
       # Google Cloud SDK
       source "/opt/homebrew/share/google-cloud-sdk/path.zsh.inc"
 
-      # work aliases / env
-      alias claudio='claude'
-      alias work="claude"
+      # work env (aliases live in programs.zsh.shellAliases above)
       export ALPHA_OPT_IN=true
       export PRIVACY_SUMMARIZATION=false
-
-      # claude-tmux (scripts live unmanaged in ~/.config/tmux/scripts/)
-      alias ct="~/.config/tmux/scripts/claude-tmux.sh"
-      alias ct-cleanup="~/.config/tmux/scripts/claude-tmux-cleanup.sh"
-
-      # token usage YTD
-      tokens-ytd() {
-        work usage --days 365 2>/dev/null \
-          | sed -n '/^Daily Breakdown/,/^Last.*Sessions/{ /^Last/d; p; }' \
-          | awk -F'│' '/^│/ && NF>4 {gsub(/^ +| +$/,"",$5); if($5 != "" && $5 != "-") print $5}' \
-          | sed 's/M/*1000000/;s/k/*1000/' \
-          | bc \
-          | LC_ALL=en_US.UTF-8 awk '{s+=$1} END{printf "Tokens used YTD: %\047d\n",s}'
-      }
     '')
   ];
 

@@ -24,12 +24,25 @@
   # nvhypr: hypr config is NOT yet in the dotfiles, so this still points at
   # ~/.config/hypr. When hypr gets folded into nix+hm (planned), repoint it the
   # way nvconf now targets the vendored nvim config.
-  programs.zsh.shellAliases.nvhypr = "cd ~/.config/hypr && nvim . && cd -";
+  programs.zsh.shellAliases = {
+    nvhypr = "cd ~/.config/hypr && nvim . && cd -";
+    # macOS binds claudio -> `claude` (work); on Linux it's plain claude.
+    claudio = "claude";
+  };
 
   programs.zsh.initContent = lib.mkAfter ''
     # Delete key + Ctrl+Left/Right word navigation (xterm/kitty sequences)
     bindkey "^[[3~" delete-char
     bindkey "^[[1;5C" forward-word
     bindkey "^[[1;5D" backward-word
+
+    # esp-idf: source the SDK env on demand (lazy — no startup cost). First run
+    # also registers /opt/esp-idf as a git safe.directory (idempotent).
+    esp() {
+      git config --global --get-all safe.directory \
+        | grep -q '^/opt/esp-idf$' \
+        || git config --global --add safe.directory /opt/esp-idf
+      source /opt/esp-idf/export.sh
+    }
   '';
 }

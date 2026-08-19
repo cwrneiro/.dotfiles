@@ -3,7 +3,7 @@
 #   Arch   -> home/linux.nix    (Arch-specific config — currently a stub)
 # `initContent`, `shellAliases`, `profileExtra`, `envExtra` all merge across
 # modules, so each layer just adds its own piece. See DECISIONS.md.
-{ config, ... }:
+{ ... }:
 
 {
   programs.zsh = {
@@ -13,19 +13,19 @@
     syntaxHighlighting.enable = true;
 
     # Shared history (was raw HISTFILE/HISTSIZE/setopt appendhistory on Arch).
+    # path defaults to $HOME/.zsh_history, so it is not set here.
     history = {
       size = 10000;
       save = 10000;
       append = true; # setopt appendhistory
-      path = "${config.home.homeDirectory}/.zsh_history";
     };
 
     # Aliases common to every machine.
     shellAliases = {
-      ll = "ls -lah";
-      ls = "ls --color";
+      ls = "ls --color=auto"; # --color=auto stays quiet when output is piped
       dot = "cd ~/.dotfiles";
       act = "source .venv/bin/activate";
+      grep = "grep --color=auto";
       # nvim config now lives in the dotfiles repo (nixCats), not ~/.config/nvim.
       nvconf = "cd ~/.dotfiles/home/packages/neovim/cfg && nvim . && cd -";
     };

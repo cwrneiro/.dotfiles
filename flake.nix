@@ -43,7 +43,7 @@
             config.allowUnfree = true;
           };
           # Values threaded down to every module (see home/common.nix args).
-          extraSpecialArgs = { inherit inputs username homeDirectory system; };
+          extraSpecialArgs = { inherit inputs username homeDirectory; };
           modules = [ hostModule ];
         };
     in {

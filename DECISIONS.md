@@ -22,11 +22,15 @@ NixOS**.
 - **zsh, kitty, tmux, and ohmyposh are now managed too** (all imported in
   `common.nix`). The real macOS configs were folded in; the previous `~/.zshrc`,
   `~/.zprofile`, `~/.zshenv`, and `~/.config/tmux/tmux.conf` were backed up to
-  `*.backup` on first `switch -b backup`. zsh is OS-split (see §7).
+  `*.backup` on first `switch -b backup`. zsh is OS-split (see §7b).
 - Identity is set for all three hosts: `macbook` =
   `augusto.carneiro`/`/Users/augusto.carneiro`; `arch` and `nixos` =
   `carneiro`/`/home/carneiro`. The Linux configs evaluate but have not been
   built/activated on a real Linux machine yet.
+- **CLI-tool sourcing tidied (macOS):** `ripgrep`/`fd` now come from Nix (brew
+  copies uninstalled); `bun`/Rancher/reflex leftovers removed (~2.6 GB, see §12);
+  Neovim highlighting for python/bash/yaml/json/sql fixed (see §6); `alt-enter`
+  opens kitty (see §11).
 
 ## Architecture decisions
 
@@ -96,6 +100,20 @@ the runtimepath — `treesitter.lua` no longer runs `:TSUpdate`/`.install()`. Th
 parser language list lives in `neovim.nix` (`tsGrammars`); keep it in sync with
 what `treesitter.lua` expects.
 
+**Highlight queries (main-branch gotcha, fixed).** On the `main` branch
+nvim-treesitter ships its highlight/indent queries under
+`runtime/queries/<lang>/`, but lazy only puts the plugin **root** on the
+runtimepath — so Neovim never finds `queries/<lang>/highlights.scm` and
+highlighting silently no-ops for every language Neovim doesn't bundle itself
+(python, bash, yaml, json, sql, …; markdown/lua/c/vim/query/vimdoc work because
+Neovim ships *their* queries, and toml falls back to legacy `:syntax`). Parsers
+load fine independent of this — only the query path was missing. Fix in
+`treesitter.lua`: prepend the plugin's `runtime/` dir to `runtimepath`
+(`vim.opt.runtimepath:prepend(...)`, discovered via
+`nvim_get_runtime_file("runtime/queries", …)`). Diagnose this class of problem
+with `:Inspect` (cursor: treesitter vs syntax vs none), `:checkhealth
+vim.treesitter`, and `vim.treesitter.query.get(lang, "highlights")`.
+
 ### 7. nixpkgs unstable + `home.stateVersion = "25.05"`
 Tracking `nixos-unstable` for current tool versions. `stateVersion` pins
 state-migration behavior and must not be bumped casually (it is NOT "the version
@@ -110,13 +128,16 @@ across modules:
   syntax highlighting, a few cross-platform aliases). No manual `compinit`
   (`enableCompletion` handles it).
 - `home/darwin.nix` — the real macOS config: `profileExtra` (brew, framework
-  Python, Obsidian), `envExtra` (uv), and `initContent` via `lib.mkMerge` of a
-  `mkBefore` block (homebrew `fpath` + `bashcompinit`, before compinit) and a
-  `mkAfter` block (bun, rancher, gcloud, work/ct/tokens work bits).
+  Python, Obsidian), `shellAliases` (`claudio`→`claude`, `work`), and
+  `initContent` via `lib.mkMerge` of a `mkBefore` block (homebrew `fpath` +
+  `bashcompinit`, before compinit) and a `mkAfter` block (`ulimit`, gcloud
+  `path.zsh.inc`, work env exports). `envExtra` was dropped and `~/.local/bin`
+  moved to `common.nix` (`home.sessionPath`, cross-platform). `bun`, Rancher,
+  `ct`/`ct-cleanup`, and `tokens-ytd` were removed (see §12).
 - `home/linux.nix` — the Arch `~/.zshrc` folded in: bindkeys, `nvhypr`, the
-  `claudio='claude'` alias, `esp()` (esp-idf, lazy), and
-  `home.sessionPath += ~/.local/bin`. (`grep='grep --color=auto'` lives in the
-  shared base, not here.)
+  `claudio='claude'` alias, and `esp()` (esp-idf, lazy). (`grep='grep
+  --color=auto'` lives in the shared base; `~/.local/bin` is now in `common.nix`'s
+  `home.sessionPath`, not here.)
   **Deliberately dropped from the Arch `~/.zshrc`** (don't re-add without asking):
   `nvbashrc`/`nvzshrc` (HM makes `~/.zshrc` a read-only symlink — edit the repo
   instead), `texref`, `rpi-imager`, `~/.cargo/bin` on PATH, and the reflex `bun`
@@ -124,8 +145,7 @@ across modules:
   `ls` switched to `--color=auto` (pipe-safe) — this affects macOS too.
 
 Consequence: `~/.zshrc` is now a read-only symlink, so tools that self-edit it
-(Rancher Desktop, gcloud installer) can't — their lines are baked in Nix and
-edited there.
+(e.g. the gcloud installer) can't — their lines are baked in Nix and edited there.
 
 ### 8. tmux plugins load LAST (not via `programs.tmux.plugins`)
 `programs.tmux.plugins` sources plugins BEFORE `extraConfig`, which breaks two
@@ -186,7 +206,12 @@ asserts a Darwin platform. Binaries come from **nixpkgs** (dropped Homebrew):
   `${pkgs.sketchybar}/bin/sketchybar` (absolute store path → independent of the
   launchd/GUI PATH). Note the module's config-onChange reload is tied to its own
   (unwritten) file, so after editing `aerospace.toml` reload manually:
-  `aerospace reload-config` (or the `alt-shift-c` binding).
+  `aerospace reload-config` (or the `alt-shift-c` binding). This bit us once:
+  switch swapped the file but the running daemon kept the old binding until a
+  reload. The `alt-enter` binding opens a new **kitty** window via
+  `exec-and-forget open -na kitty` — kitty has no Terminal-style `do script`
+  AppleScript, so the osascript idiom launches nothing; `open -na` resolves the
+  Nix `kitty.app` via LaunchServices and gives a fresh window each time.
   **Accessibility caveat:** the nix `.app` gets a new store path on each version
   bump, so macOS may drop the Accessibility grant and need re-approval after an
   update (inherent to GUI apps from the store).
@@ -229,6 +254,41 @@ LaunchAgent was unloaded. The brew `aerospace`/`sketchybar`/`font-sketchybar-app
 font` were left installed as a fallback until the nix setup is confirmed
 (uninstall once happy — nix ones are first on PATH regardless).
 
+### 12. Homebrew boundary + where CLI tools come from (macOS)
+Homebrew **stays** — this is an enterprise/MDM-managed Mac (`/Library/Managed
+Preferences`) and brew carries the work tooling (`databricks`, `azure-cli`,
+`awscli`, `gh`, `gcloud-cli`, Teams, …). The dotfiles only *touch* brew in three
+spots (`darwin.nix`): `eval "$(brew shellenv)"`, the zsh completions `fpath`
+(`/opt/homebrew/share/zsh/site-functions`), and the gcloud `path.zsh.inc`. So
+"de-brew the machine" is a non-goal; the point is just knowing that seam.
+
+- **`ripgrep` + `fd` are Nix-owned** (`common.nix` `home.packages`); the brew
+  copies were uninstalled. Important subtlety: the nixCats nvim deps in
+  `neovim.nix` (`ripgrep`, `fd`, `catimg`, `pyright`) are baked into the **wrapped
+  nvim only** — they are NOT on the interactive shell PATH. So the shell needs its
+  own copies; that's why rg/fd live in `common.nix`, not just `neovim.nix`.
+  `catimg`/`pyright`/`uv`/`tree-sitter` remain brew-only (nvim self-contains what
+  it needs).
+- **`bun` removed entirely.** It used to be sourced from a stale reflex bundle
+  (`~/Library/Application Support/reflex/bun`) via a `darwin.nix` PATH block; the
+  reflex install itself was gone. Block + bundle removed. `~/Documents/vault-app`
+  (apx/React) is the only bun consumer — reinstall bun (e.g. `pkgs.bun` in
+  `home.packages`) if you work on it again.
+- **Leftover cleanup (~2.6 GB).** Deleted: `~/.rd` (dangling symlinks into a
+  removed Rancher Desktop), `~/Library/{Application Support,Caches,Logs}/
+  rancher-desktop` + its plist, `~/.bun` cache, `~/Library/Application Support/
+  reflex`, and stale `com.koekeishiya.{yabai,skhd}` / `com.asmvik.yabai`
+  LaunchAgents (old WM, binaries long gone).
+
+### 13. Small cross-cutting cleanups
+- `home.sessionPath = [ "$HOME/.local/bin" ]` lives once in `common.nix`
+  (was duplicated: Arch `.zshrc` export + macOS `envExtra`).
+- `fonts.fontconfig.enable = pkgs.stdenv.hostPlatform.isLinux` — fontconfig is a
+  Linux mechanism; macOS finds the Nerd Font via the `~/Library/Fonts` link, so
+  enabling it on Darwin only added an unused cache.
+- Dead `system` arg dropped from `extraSpecialArgs`; redundant `zsh.history.path`
+  dropped (matches HM default).
+
 ## Repo layout
 
 ```
@@ -268,7 +328,7 @@ font` were left installed as a fallback until the nix setup is confirmed
       then repoint the `nvhypr` alias at the vendored path (like `nvconf`).
 - [ ] On macOS, verify kitty picks up JetBrains Mono Nerd Font from
       `~/Library/Fonts` (Font Book may need a re-scan / relogin).
-- [ ] Commit the nixCats migration (currently only staged, not committed).
+- [x] Commit the nixCats migration.
 - [ ] Archive / redirect the old `github.com/cwrneiro/nvim` repo (now vendored here).
 - [x] Removed the pre-nixCats backups (`~/.config/nvim.pre-nixcats`, and
       `~/.local/share/nvim/{lazy,site-pack}.pre-nixcats` + shell `*.backup`).
@@ -282,10 +342,13 @@ font` were left installed as a fallback until the nix setup is confirmed
 - [ ] Grant Accessibility to the Nix `AeroSpace.app` (System Settings → Privacy
       & Security → Accessibility) — required for tiling; re-grant after aerospace
       version bumps (store path changes).
-- [ ] Once the nix bar/WM is confirmed good: `brew uninstall aerospace sketchybar
-      font-sketchybar-app-font` and remove the `~/.config/{aerospace,sketchybar}.
-      pre-nix` + `~/Library/Fonts/sketchybar-app-font.ttf.pre-nix` backups.
-- [ ] Commit the aerospace/sketchybar migration (currently only staged).
+- [x] nix bar/WM confirmed good: brew no longer carries `aerospace`/`sketchybar`/
+      `font-sketchybar-app-font`, and the `*.pre-nix` backups are gone.
+- [x] Commit the aerospace/sketchybar migration.
+- [x] Removed `bun`/Rancher/reflex leftovers + stale yabai/skhd LaunchAgents;
+      migrated `ripgrep`/`fd` to Nix and uninstalled the brew copies (see §12).
+- [x] Fixed nvim treesitter highlighting (plugin `runtime/` queries on rtp; §6).
+- [x] `alt-enter` opens kitty via `open -na kitty` (§11).
 
 ## How to apply (once Nix is installed)
 

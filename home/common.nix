@@ -39,12 +39,18 @@
   programs.home-manager.enable = true;
 
   # Nerd Font: JetBrains Mono (kitty's font + nvim/render-markdown icons).
-  # On Linux, fontconfig picks it up from the profile; on macOS it is also
-  # linked into ~/Library/Fonts by home/darwin.nix (Nix fonts aren't auto-
-  # registered there).
-  # fontconfig is a Linux mechanism; macOS uses CoreText and finds the font via
-  # the ~/Library/Fonts link in home/darwin.nix, so enabling it there only adds
-  # an unused font cache to the closure.
+  # fontconfig is a Linux mechanism (the profile font dir is picked up there);
+  # macOS uses CoreText and finds the font via the ~/Library/Fonts link in
+  # home/darwin.nix instead, so enabling fontconfig on Darwin would only add an
+  # unused font cache to the closure — hence Linux-only.
   fonts.fontconfig.enable = pkgs.stdenv.hostPlatform.isLinux;
-  home.packages = [ pkgs.nerd-fonts.jetbrains-mono ];
+
+  home.packages = with pkgs; [
+    nerd-fonts.jetbrains-mono
+    # Shell CLIs (also used by nvim/telescope, but nixCats bakes its own copies
+    # into the wrapped nvim — these are for the interactive shell). On macOS they
+    # replace the brew-installed ripgrep/fd.
+    ripgrep
+    fd
+  ];
 }

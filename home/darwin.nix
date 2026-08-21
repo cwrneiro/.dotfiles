@@ -73,10 +73,6 @@
     (lib.mkAfter ''
       ulimit -n 10240
 
-      # bun
-      export BUN_INSTALL="$HOME/Library/Application Support/reflex/bun"
-      export PATH="$BUN_INSTALL/bin:$PATH"
-
       # Google Cloud SDK
       source "/opt/homebrew/share/google-cloud-sdk/path.zsh.inc"
 

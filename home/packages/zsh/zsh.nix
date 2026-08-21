@@ -1,5 +1,5 @@
 # zsh — shared base. Machine-specific config is contributed by the OS layers:
-#   macOS  -> home/darwin.nix   (brew, gcloud, rancher, bun, work aliases, …)
+#   macOS  -> home/darwin.nix   (brew, gcloud, work aliases, …)
 #   Arch   -> home/linux.nix    (Arch-specific config — currently a stub)
 # `initContent`, `shellAliases`, `profileExtra`, `envExtra` all merge across
 # modules, so each layer just adds its own piece. See DECISIONS.md.

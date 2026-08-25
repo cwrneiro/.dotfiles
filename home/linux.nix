@@ -26,7 +26,8 @@
   # way nvconf now targets the vendored nvim config.
   programs.zsh.shellAliases = {
     nvhypr = "cd ~/.config/hypr && nvim . && cd -";
-    # macOS binds claudio -> `claude` (work); on Linux it's plain claude.
+    # On Linux claudio is plain claude; macOS work tooling lives in an untracked
+    # home/local.nix.
     claudio = "claude";
   };
 

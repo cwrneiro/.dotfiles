@@ -7,3 +7,6 @@ result-*
 
 # OS cruft
 .DS_Store
+
+# Machine-local, untracked overrides (work-only tooling)
+home/local.nix

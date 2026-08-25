@@ -128,10 +128,10 @@ across modules:
   syntax highlighting, a few cross-platform aliases). No manual `compinit`
   (`enableCompletion` handles it).
 - `home/darwin.nix` — the real macOS config: `profileExtra` (brew, framework
-  Python, Obsidian), `shellAliases` (`claudio`→`claude`, `work`), and
-  `initContent` via `lib.mkMerge` of a `mkBefore` block (homebrew `fpath` +
-  `bashcompinit`, before compinit) and a `mkAfter` block (`ulimit`, gcloud
-  `path.zsh.inc`, work env exports). `envExtra` was dropped and `~/.local/bin`
+  Python, Obsidian) and `initContent` via `lib.mkMerge` of a `mkBefore` block
+  (homebrew `fpath` + `bashcompinit`, before compinit) and a `mkAfter` block
+  (`ulimit`, gcloud `path.zsh.inc`). Work-only shell aliases/env live in an
+  untracked `home/local.nix` (imported if present). `envExtra` was dropped and `~/.local/bin`
   moved to `common.nix` (`home.sessionPath`, cross-platform). `bun`, Rancher,
   `ct`/`ct-cleanup`, and `tokens-ytd` were removed (see §12).
 - `home/linux.nix` — the Arch `~/.zshrc` folded in: bindkeys, `nvhypr`, the

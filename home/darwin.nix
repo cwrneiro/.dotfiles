@@ -10,7 +10,9 @@
     # the aerospace module asserts a Darwin platform).
     ./packages/aerospace/aerospace.nix
     ./packages/sketchybar/sketchybar.nix
-  ];
+  ]
+  # Untracked work-only overrides (aliases/env), if present. See home/local.nix.
+  ++ lib.optional (builtins.pathExists ./local.nix) ./local.nix;
 
   home.packages = with pkgs; [
     clang # C compiler for nvim-treesitter parser builds (macOS uses clang)
@@ -56,13 +58,6 @@
     export PATH="$PATH:/Applications/Obsidian.app/Contents/MacOS"
   '';
 
-  # Work aliases (moved out of initContent so they get Nix-level dedup/collision
-  # detection). claudio: macOS binds it to `claude` (Linux uses plain claude).
-  programs.zsh.shellAliases = {
-    claudio = "claude";
-    work = "claude";
-  };
-
   # Interactive (.zshrc). mkBefore runs before compinit (fpath must precede it);
   # mkAfter runs after the shared setup and the oh-my-posh init.
   programs.zsh.initContent = lib.mkMerge [
@@ -75,10 +70,6 @@
 
       # Google Cloud SDK
       source "/opt/homebrew/share/google-cloud-sdk/path.zsh.inc"
-
-      # work env (aliases live in programs.zsh.shellAliases above)
-      export ALPHA_OPT_IN=true
-      export PRIVACY_SUMMARIZATION=false
     '')
   ];
 

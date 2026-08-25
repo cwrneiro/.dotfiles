@@ -111,3 +111,9 @@ bottom      = 10
 left        = 10
 right       = 10
 
+# Pin the "0" workspace (alt-0 -> `workspace 10`) to the external display.
+# 'secondary' = any non-main monitor. If no secondary is connected (undocked),
+# AeroSpace falls back to a connected monitor automatically, so this is safe.
+[workspace-to-monitor-force-assignment]
+10 = 'secondary'
+

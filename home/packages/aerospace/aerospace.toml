@@ -111,9 +111,20 @@ bottom      = 10
 left        = 10
 right       = 10
 
-# Pin the "0" workspace (alt-0 -> `workspace 10`) to the external display.
-# 'secondary' = any non-main monitor. If no secondary is connected (undocked),
-# AeroSpace falls back to a connected monitor automatically, so this is safe.
+# Monitor pinning. 'main' = macOS primary (menu-bar) display; 'secondary' =
+# any non-main monitor (the TV/external). Workspaces 1-9 stay on the primary so
+# the external can only ever show workspace 10 (alt-0) instead of grabbing an
+# arbitrary free workspace. If a monitor isn't connected (undocked), AeroSpace
+# falls back to a connected monitor automatically, so this is safe.
 [workspace-to-monitor-force-assignment]
+1 = 'main'
+2 = 'main'
+3 = 'main'
+4 = 'main'
+5 = 'main'
+6 = 'main'
+7 = 'main'
+8 = 'main'
+9 = 'main'
 10 = 'secondary'
 

@@ -1,0 +1,126 @@
+# Rift config — translated from aerospace.toml. Rift reads ~/.config/rift/config.toml.
+#
+# @sketchybar@ / @rift-cli@ are rewritten to absolute Nix store paths by rift.nix
+# (same substitution trick aerospace.nix uses), so the launchd/GUI PATH is
+# irrelevant. Full command reference: rift.default.toml upstream.
+
+[settings]
+# aerospace has no window animations at all. Rift's smooth animations are a
+# headline reason to switch, so turn them on (upstream default is off).
+animate = true
+animation_duration = 0.25
+animation_fps = 0.0 # 0 = follow the display refresh rate
+
+# aerospace does not do focus-follows-mouse; keep parity here. Flip these on to
+# taste — this is a Rift capability aerospace lacked.
+focus_follows_mouse = false
+mouse_follows_focus = false
+mouse_hides_on_focus = false
+
+auto_focus_blacklist = []
+
+# aerospace fired `sketchybar --trigger aerospace_workspace_change` from inside
+# every workspace keybind. Rift instead PUSHES events, so we subscribe rift-cli
+# once and re-emit sketchybar triggers. Event names (rift_workspace_changed /
+# rift_windows_changed) match what the sketchybar spaces plugin subscribes to.
+run_on_start = [
+  "@rift-cli@ subscribe cli --event workspace_changed --command sh --args -c --args '@sketchybar@ --trigger rift_workspace_changed RIFT_WORKSPACE_NAME=\"$RIFT_WORKSPACE_NAME\"'",
+  "@rift-cli@ subscribe cli --event windows_changed --command sh --args -c --args '@sketchybar@ --trigger rift_windows_changed RIFT_WORKSPACE_NAME=\"$RIFT_WORKSPACE_NAME\" RIFT_WINDOW_COUNT=\"$RIFT_WINDOW_COUNT\"'",
+]
+
+hot_reload = true
+
+[settings.layout]
+mode = "traditional"                       # aerospace default-root-container-layout = 'tiles'
+window_insertion_point = "next_to_selection"
+
+# aerospace [gaps]: inner 10 / outer 10 on all sides.
+[settings.layout.gaps.outer]
+top = 10
+left = 10
+bottom = 10
+right = 10
+
+[settings.layout.gaps.inner]
+horizontal = 10
+vertical = 10
+
+[virtual_workspaces]
+enabled = true
+default_workspace_count = 10               # aerospace used workspaces 1..10
+auto_assign_windows = true
+preserve_focus_per_workspace = true
+workspace_auto_back_and_forth = false
+prevent_wrapping = false
+# Label the 10 (0-indexed) workspaces "1".."10" so the sketchybar items and the
+# keybinds below read exactly like aerospace: Alt+1 focuses the workspace
+# labeled "1" (index 0), Alt+0 focuses "10" (index 9). The 0-based index only
+# lives in the keybinds, never on screen.
+workspace_names = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
+
+[modifier_combinations]
+comb1 = "Alt + Shift"
+
+[keys]
+# New kitty window (aerospace: alt-enter = open -na kitty)
+"Alt + Enter" = { exec = ["open", "-na", "kitty"] }
+
+# Focus movement (aerospace alt-h/j/k/l)
+"Alt + H" = { move_focus = "left" }
+"Alt + J" = { move_focus = "down" }
+"Alt + K" = { move_focus = "up" }
+"Alt + L" = { move_focus = "right" }
+
+# Move window (aerospace alt-shift-h/j/k/l)
+"comb1 + H" = { move_node = "left" }
+"comb1 + J" = { move_node = "down" }
+"comb1 + K" = { move_node = "up" }
+"comb1 + L" = { move_node = "right" }
+
+# Fullscreen (aerospace alt-f)
+"Alt + F" = "toggle_fullscreen"
+
+# Layout controls — CLOSEST equivalents; Rift's tree model is not i3's, so these
+# are approximate:
+#   aerospace alt-s (v_accordion / stacking) -> toggle_stack
+#   aerospace alt-e (toggle split)           -> toggle_orientation
+# aerospace alt-w (h_accordion / tabbed) has no clean Rift analogue and is dropped.
+"Alt + S" = "toggle_stack"
+"Alt + E" = "toggle_orientation"
+
+# Floating toggle (aerospace alt-shift-space)
+"Alt + Shift + Space" = "toggle_window_floating"
+
+# Workspaces (aerospace alt-1..alt-0). Keys map to 0-based indices so the
+# on-screen labels "1".."10" (set via workspace_names) line up with the key:
+# Alt+1 => index 0 (labeled "1") ... Alt+0 => index 9 (labeled "10").
+"Alt + 1" = { switch_to_workspace = 0 }
+"Alt + 2" = { switch_to_workspace = 1 }
+"Alt + 3" = { switch_to_workspace = 2 }
+"Alt + 4" = { switch_to_workspace = 3 }
+"Alt + 5" = { switch_to_workspace = 4 }
+"Alt + 6" = { switch_to_workspace = 5 }
+"Alt + 7" = { switch_to_workspace = 6 }
+"Alt + 8" = { switch_to_workspace = 7 }
+"Alt + 9" = { switch_to_workspace = 8 }
+"Alt + 0" = { switch_to_workspace = 9 }
+
+# Move window to workspace (aerospace alt-shift-1..0), same index mapping.
+"comb1 + 1" = { move_window_to_workspace = 0 }
+"comb1 + 2" = { move_window_to_workspace = 1 }
+"comb1 + 3" = { move_window_to_workspace = 2 }
+"comb1 + 4" = { move_window_to_workspace = 3 }
+"comb1 + 5" = { move_window_to_workspace = 4 }
+"comb1 + 6" = { move_window_to_workspace = 5 }
+"comb1 + 7" = { move_window_to_workspace = 6 }
+"comb1 + 8" = { move_window_to_workspace = 7 }
+"comb1 + 9" = { move_window_to_workspace = 8 }
+"comb1 + 0" = { move_window_to_workspace = 9 }
+
+# Reload config (aerospace alt-shift-c)
+"comb1 + C" = "reload_config"
+
+# Resize — aerospace used a dedicated `resize` mode (alt-r, then h/j/k/l). Rift
+# has no modal bindings, so map to direct grow/shrink instead.
+"Alt + Shift + Equal" = "resize_window_grow"
+"Alt + Shift + Minus" = "resize_window_shrink"

@@ -91,24 +91,25 @@ addAerospaceSpaces() {
 }
 
 addRiftSpaces() {
-	# Add the rift workspace change event
+	# Add the rift events (fired by rift-cli subscriptions; see rift config.toml)
 	sketchybar --add event rift_workspace_changed
+	sketchybar --add event rift_windows_changed
 
 	sendLog "Detected rift spaces : ${SPACES[*]}" "vomit"
 
-	for sid in "${SPACES[@]}"; do # For each existing space add corresponding item
+	for ws in "${SPACES[@]}"; do # For each existing workspace add corresponding item
+		sid=$(echo "$ws" | sed 's/ /__/g') # Format name for sketchybar item key
+
 		space=("${dummy_space[@]}")
 		space+=(
-			icon="$sid"
-			script="$SCRIPT_SPACES $workspace"
+			icon="$ws"
+			script="$SCRIPT_SPACES $ws"
 			drawing=on
 		)
 
-		sid=$(echo "$sid" | sed 's/ /__/g') # Format name for sketchybar
-
 		sketchybar --add item space.$sid left \
 			--set space.$sid "${space[@]}" \
-			--subscribe space.$sid rift_workspace_changed mouse.clicked mouse.entered #rift_windows_changed
+			--subscribe space.$sid rift_workspace_changed rift_windows_changed mouse.clicked mouse.entered
 
 		sendLog "Add rift space item id : $sid" "vomit"
 	done
@@ -163,10 +164,20 @@ case "$WINDOW_MANAGER" in
 	SCRIPT_SPACES="export PATH=$PATH; $RELPATH/plugins/spaces/rift/script-space.sh"
 	SCRIPT_SPACE_WINDOWS="export PATH=$PATH; $RELPATH/plugins/spaces/rift/script-windows.sh"
 
-	# Query all workspaces available & handle whitespaces
+	# Query workspace names from the running rift daemon. Guarded with a 3s
+	# timeout (perl alarm; macOS has no `timeout`) because on a fresh
+	# `home-manager switch` sketchybar and rift start together and rift's mach
+	# service may not be up yet — without the guard a hang would block item
+	# sourcing and leave the bar empty.
 	while IFS= read -r line; do
-		SPACES+=("$line")
-	done < <(rift-cli query workspaces 2>/dev/null | jq -r '.[] | .name')
+		[ -n "$line" ] && SPACES+=("$line")
+	done < <(perl -e 'alarm 3; exec @ARGV' rift-cli query workspaces 2>/dev/null | jq -r '.[] | .name' 2>/dev/null)
+
+	# Fallback: if rift wasn't ready (empty query), assume the configured 10
+	# workspaces labeled 1..10 so the bar still renders.
+	if [ ${#SPACES[@]} -eq 0 ]; then
+		SPACES=("1" "2" "3" "4" "5" "6" "7" "8" "9" "10")
+	fi
 
 	# Trigger helper to add necessary spaces
 	addRiftSpaces

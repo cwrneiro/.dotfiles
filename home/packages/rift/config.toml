@@ -62,6 +62,12 @@ workspace_names = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
 comb1 = "Alt + Shift"
 
 [keys]
+# Activate/deactivate rift's window management on the current Space. rift starts
+# deactivated by design, so this binding is REQUIRED to turn tiling on (aerospace
+# had no equivalent — it was always managing). This lives only in rift's default
+# config, so it must be carried over explicitly here.
+"Alt + Z" = "toggle_space_activated"
+
 # New kitty window (aerospace: alt-enter = open -na kitty)
 "Alt + Enter" = { exec = ["open", "-na", "kitty"] }
 

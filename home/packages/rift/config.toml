@@ -90,11 +90,22 @@ comb1 = "Alt + Shift"
 "Alt + K" = { move_focus = "up" }
 "Alt + L" = { move_focus = "right" }
 
-# Move window (aerospace alt-shift-h/j/k/l)
+# Move window within the display (aerospace alt-shift-h/j/k/l)
 "comb1 + H" = { move_node = "left" }
 "comb1 + J" = { move_node = "down" }
 "comb1 + K" = { move_node = "up" }
 "comb1 + L" = { move_node = "right" }
+
+# Multi-display (built-in + external). IMPORTANT: move windows across displays
+# with THESE, not the mouse — dragging a window to another display with the
+# mouse does not update rift's workspace assignment, so a later layout pass
+# (e.g. Alt+1) yanks it back to where rift still thinks it belongs.
+#   Alt+Ctrl+H/L        focus the display to the left/right
+#   Alt+Ctrl+Shift+H/L  move the focused window to the display left/right
+"Alt + Ctrl + H" = { focus_display = "left" }
+"Alt + Ctrl + L" = { focus_display = "right" }
+"Alt + Ctrl + Shift + H" = { move_window_to_display = { selector = "left" } }
+"Alt + Ctrl + Shift + L" = { move_window_to_display = { selector = "right" } }
 
 # Fullscreen (aerospace alt-f)
 "Alt + F" = "toggle_fullscreen"

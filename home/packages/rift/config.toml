@@ -15,7 +15,10 @@ default_disable = false
 # headline reason to switch, so turn them on (upstream default is off).
 animate = true
 animation_duration = 0.25
-animation_fps = 0.0 # 0 = follow the display refresh rate
+# NOTE: upstream documents 0.0 as "use display refresh rate", but rift v0.5.3
+# then computes 1/fps and panics (Duration from infinity) the first time it
+# animates a tiling. Use an explicit rate.
+animation_fps = 120.0
 
 # aerospace does not do focus-follows-mouse; keep parity here. Flip these on to
 # taste — this is a Rift capability aerospace lacked.

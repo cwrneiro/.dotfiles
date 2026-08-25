@@ -40,7 +40,11 @@ run_on_start = [
 hot_reload = true
 
 [settings.layout]
-mode = "traditional"                       # aerospace default-root-container-layout = 'tiles'
+# bsp (binary space partitioning) splits the larger dimension on each new window,
+# giving balanced tiles — the closest match to aerospace's 'tiles' + auto
+# orientation. "traditional" (i3-style) instead stacks new windows as columns in
+# one direction, so everything becomes thin vertical strips.
+mode = "bsp"
 window_insertion_point = "next_to_selection"
 
 # aerospace [gaps]: inner 10 / outer 10 on all sides.

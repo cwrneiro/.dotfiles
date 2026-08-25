@@ -2,11 +2,6 @@
 vim.g.mapleader = " "
 vim.g.maplocalleader = "\\"
 
--- nixCats: give the `nixCats()` global a sane default when this config runs
--- without Nix, and expose `isNixCats`. Harmless under Nix (the real nixCats
--- plugin is injected by the wrapper). See lua/nixCatsUtils/.
-require("nixCatsUtils").setup({ non_nix_value = true })
-
 -- Nerd Font availability is decided in Nix (packageDefinitions categories).
 vim.g.have_nerd_font = nixCats("have_nerd_font")
 

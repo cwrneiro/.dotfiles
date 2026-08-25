@@ -5,6 +5,12 @@
 # irrelevant. Full command reference: rift.default.toml upstream.
 
 [settings]
+# Manage every Space automatically, like aerospace did. rift defaults to
+# starting each Space DEACTIVATED (you'd have to press Alt+Z per Space to enable
+# tiling); false flips that so rift tiles everywhere out of the box. Alt+Z still
+# toggles a Space off if you want it.
+default_disable = false
+
 # aerospace has no window animations at all. Rift's smooth animations are a
 # headline reason to switch, so turn them on (upstream default is off).
 animate = true

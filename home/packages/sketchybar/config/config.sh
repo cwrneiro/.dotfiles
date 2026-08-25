@@ -35,6 +35,6 @@ BAR_TRANSPARENCY=false
 THEME_FILE_PATH="$HOME/.config/sketchybar/theme.sh"
 
 # Force a specific window manager
-WINDOW_MANAGER="rift"
+WINDOW_MANAGER="aerospace"
 
 LOG_LEVEL="vomit"

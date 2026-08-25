@@ -18,8 +18,6 @@
   home.packages = with pkgs; [
     sketchybar
     sketchybar-app-font # app-name glyphs used by the spaces item
-    jq # used pervasively by plugin scripts (spaces/rift, music, wifi, …); make
-       # it a declarative dep instead of relying on the Homebrew jq on PATH
   ];
 
   # Vendored config tree -> ~/.config/sketchybar (individual symlinks so the

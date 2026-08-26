@@ -29,6 +29,10 @@
       url = "github:polirritmico/monokai-nightasty.nvim";
       flake = false;
     };
+
+    # nixGL wraps Nix-installed OpenGL programs so they find the system GL
+    # drivers. Only needed on non-NixOS Linux (Arch host).
+    nixgl.url = "github:nix-community/nixGL";
   };
 
   outputs = { self, nixpkgs, home-manager, neovim-nightly-overlay, nixCats, ... }@inputs:

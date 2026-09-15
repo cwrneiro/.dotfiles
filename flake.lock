@@ -162,6 +162,22 @@
         "type": "github"
       }
     },
+    "plugins-d2-vim": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1785641390,
+        "narHash": "sha256-iAPP/Ohf3Aw8I4WmNvTtyMja48stsG4pzp8cZjcDjRg=",
+        "owner": "terrastruct",
+        "repo": "d2-vim",
+        "rev": "a950f1a276506ac4bbc274dd65ba98b15a1d490d",
+        "type": "github"
+      },
+      "original": {
+        "owner": "terrastruct",
+        "repo": "d2-vim",
+        "type": "github"
+      }
+    },
     "plugins-monokai-nightasty": {
       "flake": false,
       "locked": {
@@ -185,6 +201,7 @@
         "nixCats": "nixCats",
         "nixgl": "nixgl",
         "nixpkgs": "nixpkgs_2",
+        "plugins-d2-vim": "plugins-d2-vim",
         "plugins-monokai-nightasty": "plugins-monokai-nightasty"
       }
     },

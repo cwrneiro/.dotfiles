@@ -107,7 +107,8 @@ in
         # git
         vim-fugitive
       ]) ++ [
-        pkgs.neovimPlugins.monokai-nightasty   # colorscheme (from plugins-* input)
+        pkgs.neovimPlugins.monokai-nightasty	# colorscheme (from plugins-* input)
+        pkgs.neovimPlugins.d2-vim		# d2 syntax highlight
       ];
     });
 

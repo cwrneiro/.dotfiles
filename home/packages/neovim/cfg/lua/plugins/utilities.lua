@@ -24,5 +24,9 @@ return {
 		config = function ()
 			require("colorizer").setup()
 		end
+	},
+	{
+		"terrastruct/d2-vim",
+		lazy = false
 	}
 }

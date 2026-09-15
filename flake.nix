@@ -30,6 +30,11 @@
       flake = false;
     };
 
+    plugins-d2-vim = {
+      url = "github:terrastruct/d2-vim";
+      flake = false;
+    };
+
     # nixGL wraps Nix-installed OpenGL programs so they find the system GL
     # drivers. Only needed on non-NixOS Linux (Arch host).
     nixgl.url = "github:nix-community/nixGL";

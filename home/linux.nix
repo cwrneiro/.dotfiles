@@ -4,7 +4,10 @@
 { pkgs, lib, ... }:
 
 {
-  imports = [ ./common.nix ];
+	imports = [
+		./common.nix
+		./packages/opencode/opencode.nix
+	];
 
   home.packages = with pkgs; [
     gcc       # C compiler for nvim-treesitter parser builds

@@ -46,8 +46,21 @@
   };
 
   # ---- macOS-specific zsh -----------------------------------------------------
+  # Non-login shells skip .zprofile, so source the Nix hook here too (it guards
+  # against double-sourcing).
+  programs.zsh.envExtra = ''
+    if [[ ! -o login && -e /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]]; then
+      . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+    fi
+  '';
+
   # Login shell (.zprofile): Homebrew, framework Python, Obsidian.
   programs.zsh.profileExtra = ''
+    # Nix on PATH. macOS updates reset /etc/zshrc and drop the installer's hook,
+    # so source it from $HOME where updates/MDM can't touch it.
+    [ -e /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ] && \
+      . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+
     eval "$(/opt/homebrew/bin/brew shellenv)"
 
     # Framework Python 3.13

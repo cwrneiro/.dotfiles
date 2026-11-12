@@ -15,6 +15,7 @@ in
 {
   programs.tmux = {
     enable = true;
+    shell = "${pkgs.zsh}/bin/zsh";
     extraConfig = builtins.readFile ./tmux.conf + ''
 
       # --- Plugins from nixpkgs (loaded last; see tmux.nix) --------------------

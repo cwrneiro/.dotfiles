@@ -1,7 +1,7 @@
 { inputs, pkgs, ... }:
 
 let
-	nixglPkgs = inputs.nixgl.packages.${pkgs.system};
+	nixglPkgs = inputs.nixgl.packages.${pkgs.stdenv.hostPlatform.system};
 in {
 	# Wrap kitty with nixGLIntel (mesa) so it finds the system GL drivers on
 	# non-NixOS Linux.

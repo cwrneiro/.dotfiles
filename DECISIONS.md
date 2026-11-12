@@ -6,8 +6,7 @@ context. Read this first.
 ## Goal
 
 One declarative, reproducible config for **Neovim, tmux, kitty, zsh** (and more
-over time) that deploys identically to **macOS (Apple Silicon), Arch Linux, and
-NixOS**.
+over time) that deploys identically to **macOS (Apple Silicon) and Linux**.
 
 ## Current status
 
@@ -24,8 +23,9 @@ NixOS**.
   `~/.zprofile`, `~/.zshenv`, and `~/.config/tmux/tmux.conf` were backed up to
   `*.backup` on first `switch -b backup`. zsh is OS-split (see §7b).
 - Identity is set for all three hosts: `macbook` =
-  `augusto.carneiro`/`/Users/augusto.carneiro`; `arch` and `nixos` =
-  `carneiro`/`/home/carneiro`. The Linux configs evaluate but have not been
+  `augusto.carneiro`/`/Users/augusto.carneiro`; `zoro` and `jinbe` =
+  `carneiro`/`/home/carneiro`. (`arch` was renamed `zoro`; the `nixos` host was
+  dropped.) The Linux configs evaluate but have not been
   built/activated on a real Linux machine yet.
 - **CLI-tool sourcing tidied (macOS):** `ripgrep`/`fd` now come from Nix (brew
   copies uninstalled); `bun`/Rancher/reflex leftovers removed (~2.6 GB, see §12);
@@ -43,7 +43,7 @@ wired as a `nixosConfiguration`, not mixed into the user layer.
 ### 2. Multi-system flake via one `mkHome` helper
 The reference repo (codeberg justgivemeaname/.dotfiles) hardcoded a single
 `system = "x86_64-linux"`. We generalized: `mkHome` takes `system` per
-`homeConfiguration`, so `macbook` = `aarch64-darwin`, `arch`/`nixos` =
+`homeConfiguration`, so `macbook` = `aarch64-darwin`, `zoro`/`jinbe` =
 `x86_64-linux`. This was the single biggest change from the reference.
 
 ### 3. Per-program module directories (adopted from reference repo)
@@ -289,6 +289,13 @@ spots (`darwin.nix`): `eval "$(brew shellenv)"`, the zsh completions `fpath`
 - Dead `system` arg dropped from `extraSpecialArgs`; redundant `zsh.history.path`
   dropped (matches HM default).
 
+### 14. Per-host AI tooling and the nixGL wrapper
+AI CLIs are chosen per host, not in `linux.nix`: `zoro` imports
+`packages/opencode/opencode.nix`, `jinbe` imports `packages/claude/claude.nix`.
+`linux.nix` stays limited to what every Linux host needs. The kitty nixGLIntel
+wrapper (needed on non-NixOS Linux for EGL/GLX) lives once in `home/nixgl.nix`
+and is imported by each such host instead of being copy-pasted into it.
+
 ## Repo layout
 
 ```
@@ -299,16 +306,19 @@ spots (`darwin.nix`): `eval "$(brew shellenv)"`, the zsh completions `fpath`
 ├── home/
 │   ├── common.nix                  # identity + imports aggregator
 │   ├── darwin.nix                  # macOS extras (clang, aerospace, sketchybar) -> imports common
-│   ├── linux.nix                   # Arch+NixOS extras (gcc, xdg-utils)
+│   ├── linux.nix                   # shared Linux extras (gcc, xdg-utils)
+│   ├── nixgl.nix                   # kitty nixGL wrapper (non-NixOS Linux hosts)
 │   ├── hosts/
 │   │   ├── macbook.nix             # -> darwin.nix
-│   │   ├── arch.nix                # -> linux.nix
-│   │   └── nixos.nix               # -> linux.nix
+│   │   ├── zoro.nix                # -> linux.nix + nixgl.nix + opencode
+│   │   └── jinbe.nix               # -> linux.nix + nixgl.nix + claude
 │   └── packages/
 │       ├── template.nix            # copy to add a program
 │       ├── neovim/neovim.nix       # env only (Phase 1)
 │       ├── zsh/zsh.nix
 │       ├── kitty/kitty.nix
+│       ├── opencode/opencode.nix   # per-host (zoro)
+│       ├── claude/claude.nix       # per-host (jinbe)
 │       ├── tmux/{tmux.nix,tmux.conf}
 │       ├── aerospace/{aerospace.nix,aerospace.toml}   # macOS-only (via darwin.nix)
 │       └── sketchybar/{sketchybar.nix,config/…}       # macOS-only (via darwin.nix)
@@ -332,9 +342,9 @@ spots (`darwin.nix`): `eval "$(brew shellenv)"`, the zsh completions `fpath`
 - [ ] Archive / redirect the old `github.com/cwrneiro/nvim` repo (now vendored here).
 - [x] Removed the pre-nixCats backups (`~/.config/nvim.pre-nixcats`, and
       `~/.local/share/nvim/{lazy,site-pack}.pre-nixcats` + shell `*.backup`).
-- [x] Set real usernames/home dirs for `arch`/`nixos` (`carneiro`/`/home/carneiro`).
+- [x] Set real usernames/home dirs for `zoro`/`jinbe` (`carneiro`/`/home/carneiro`).
 - [ ] Build/activate on a real Linux machine
-      (`nix build .#homeConfigurations.arch.activationPackage`) — evaluates, untested.
+      (`nix build .#homeConfigurations.zoro.activationPackage`) — evaluates, untested.
 - [ ] Add a Nerd Font package (e.g. `nerd-fonts.hack`) if icons render wrong
       (`have_nerd_font = true` is already set in `neovim.nix`).
 - [x] Manage AeroSpace + SketchyBar on macOS from nixpkgs (see §11). Done —
@@ -354,6 +364,6 @@ spots (`darwin.nix`): `eval "$(brew shellenv)"`, the zsh completions `fpath`
 
 ```sh
 home-manager switch --flake ~/.dotfiles#macbook   # macOS
-home-manager switch --flake ~/.dotfiles#arch      # Arch
-home-manager switch --flake ~/.dotfiles#nixos     # NixOS (user layer)
+home-manager switch --flake ~/.dotfiles#zoro      # Linux (Arch)
+home-manager switch --flake ~/.dotfiles#jinbe     # Linux (Arch)
 ```
